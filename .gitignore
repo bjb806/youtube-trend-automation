@@ -1,0 +1,19 @@
+# Secrets
+.env
+credentials.json
+token.json
+
+# Scratch space
+.tmp/
+
+# Claude Code local session settings
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
