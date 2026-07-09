@@ -35,7 +35,20 @@ class GmailAuthError(Exception):
     """Raised when Gmail auth needs a manual, interactive re-authorization."""
 
 
+def materialize_credential_files():
+    """In a cloud sandbox there's no local credentials.json/token.json - only
+    env vars. Write them out once per run so the rest of this module can work
+    unchanged whether running locally or in the cloud."""
+    if not os.path.exists(CREDENTIALS_PATH) and os.environ.get("GMAIL_CREDENTIALS_JSON"):
+        with open(CREDENTIALS_PATH, "w") as f:
+            f.write(os.environ["GMAIL_CREDENTIALS_JSON"])
+    if not os.path.exists(TOKEN_PATH) and os.environ.get("GMAIL_TOKEN_JSON"):
+        with open(TOKEN_PATH, "w") as f:
+            f.write(os.environ["GMAIL_TOKEN_JSON"])
+
+
 def get_credentials():
+    materialize_credential_files()
     creds = None
     if os.path.exists(TOKEN_PATH):
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)

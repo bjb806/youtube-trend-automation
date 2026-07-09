@@ -4,10 +4,16 @@
 유튜브 한국(KR) Top 10 트렌딩 영상을 수집·분석해서 PDF 리포트를 만들고, 본인(jungbin93@gmail.com)에게 이메일로 발송하고, 모든 데이터를 Notion에 누적 저장한다.
 
 ## Inputs
-`.env`: `YOUTUBE_API_KEY`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `REPORT_RECIPIENT_EMAIL`
-파일: `credentials.json` / `token.json` (Gmail OAuth)
+환경변수(클라우드 환경설정에 등록됨): `YOUTUBE_API_KEY`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `REPORT_RECIPIENT_EMAIL`, `GMAIL_CREDENTIALS_JSON`, `GMAIL_TOKEN_JSON`
 
 사용자로부터 받는 입력은 없음. 실행일 기준 날짜를 `{date}` (YYYY-MM-DD)로 사용.
+
+### 0. 실행 환경 준비 (매 실행 시)
+클라우드 실행 환경은 매번 새로 시작되므로, 본격적인 단계 전에 의존성을 설치한다:
+```
+pip install -r requirements.txt
+```
+`credentials.json`/`token.json`은 `tools/gmail_send.py`가 `GMAIL_CREDENTIALS_JSON`/`GMAIL_TOKEN_JSON` 환경변수로부터 자동으로 파일을 생성하므로 별도 조치가 필요 없다.
 
 ---
 
