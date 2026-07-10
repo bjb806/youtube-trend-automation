@@ -10,10 +10,13 @@ Daily sync:
 import argparse
 import json
 import os
+import re
 import sys
 
 from dotenv import load_dotenv
 from notion_client import Client
+
+VIDEO_ID_RE = re.compile(r"v=([\w-]+)")
 
 load_dotenv()
 
@@ -73,6 +76,25 @@ def video_to_properties(date, video):
         "Hook Style": {"rich_text": [{"text": {"content": video.get("hook_style", "")}}]},
         "Analysis Summary": {"rich_text": [{"text": {"content": video.get("analysis_summary", "")}}]},
     }
+
+
+def get_video_views_by_date(data_source_id, date):
+    """Returns {video_id: view_count} for entries logged on the given date,
+    matched by parsing the video id out of the stored Video URL (there's no
+    dedicated Video ID column in this schema)."""
+    notion = get_client()
+    results = notion.data_sources.query(
+        data_source_id=data_source_id,
+        filter={"property": "Date", "date": {"equals": date}},
+    )["results"]
+    views = {}
+    for page in results:
+        url = page["properties"]["Video URL"]["url"]
+        view_count = page["properties"]["View Count"]["number"]
+        match = VIDEO_ID_RE.search(url or "")
+        if match:
+            views[match.group(1)] = view_count
+    return views
 
 
 def append_daily_entries(data_source_id, data):
