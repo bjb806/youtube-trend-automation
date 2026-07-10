@@ -1,7 +1,7 @@
 # Daily Trend Report (매일 08:00 KST)
 
 ## Goal
-유튜브 한국(KR) Top 10 트렌딩 영상을 수집·분석해서 PDF 리포트를 만들고, 본인(jungbin93@gmail.com)에게 이메일로 발송하고, 모든 데이터를 Notion에 누적 저장한다.
+유튜브 한국(KR) Top 10 트렌딩 영상을 수집·분석해서 PDF 리포트를 만들고, 본인(`REPORT_RECIPIENT_EMAIL` 환경변수의 주소)에게 이메일로 발송하고, 모든 데이터를 Notion에 누적 저장한다.
 
 ## Inputs
 환경변수(클라우드 환경설정에 등록됨): `YOUTUBE_API_KEY`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `REPORT_RECIPIENT_EMAIL`, `GMAIL_CREDENTIALS_JSON`, `GMAIL_TOKEN_JSON`
@@ -97,7 +97,7 @@ python tools/notion_sync.py --input .tmp/report_data_{date}.json --database-id $
 ---
 
 ## Expected Output
-- PDF 리포트 1부가 `jungbin93@gmail.com`으로 발송됨
+- PDF 리포트 1부가 `REPORT_RECIPIENT_EMAIL`로 발송됨
 - Notion `YouTube KR Trends` 데이터베이스에 10개 행 추가됨
 - 실행 로그 한 줄 요약
 

@@ -11,7 +11,7 @@ token) as long as the OAuth consent screen is in "production" status - in
 silently break the daily cloud run.
 
 CLI:
-    python tools/gmail_send.py --to jungbin93@gmail.com --subject "..." \\
+    python tools/gmail_send.py --to you@example.com --subject "..." \\
         --body-file .tmp/email_body.txt --attachment .tmp/report_20260709.pdf
 """
 import argparse
