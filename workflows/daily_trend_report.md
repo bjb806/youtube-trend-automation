@@ -15,6 +15,12 @@ pip install -r requirements.txt
 ```
 `credentials.json`/`token.json`은 `tools/gmail_send.py`가 `GMAIL_CREDENTIALS_JSON`/`GMAIL_TOKEN_JSON` 환경변수로부터 자동으로 파일을 생성하므로 별도 조치가 필요 없다.
 
+**`{date}` 계산 시 반드시 한국 시간(KST) 기준으로 구한다:**
+```
+TZ=Asia/Seoul date +%Y-%m-%d
+```
+클라우드 실행 환경의 시스템 시계는 UTC이고, 스케줄은 08:00 KST(=23:00 UTC 전날)에 실행된다. 그냥 `date +%Y-%m-%d`를 쓰면 UTC 기준 날짜가 나와서 하루 전 날짜로 잘못 찍힌다 (예: 실제 한국시간 7/11 08:00에 실행됐는데 UTC로는 아직 7/10 23:00이라 `{date}`가 "7/10"이 되어버림). 이 하루 어긋남은 표시 오류로 끝나지 않고, 다음날 "어제 대비 증가분" 계산(2단계)이 Notion에서 어제 날짜 데이터를 못 찾아 깨지는 원인이 된다.
+
 ---
 
 ## Steps
