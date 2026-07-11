@@ -78,23 +78,21 @@ def video_to_properties(date, video):
     }
 
 
-def get_video_views_by_date(data_source_id, date):
-    """Returns {video_id: view_count} for entries logged on the given date,
-    matched by parsing the video id out of the stored Video URL (there's no
-    dedicated Video ID column in this schema)."""
+def get_recent_video_ids(data_source_id, since_date):
+    """Returns the set of video ids that appeared in the Top 10 on or after
+    since_date (YYYY-MM-DD), so a repeat-exclusion filter can skip them."""
     notion = get_client()
     results = notion.data_sources.query(
         data_source_id=data_source_id,
-        filter={"property": "Date", "date": {"equals": date}},
+        filter={"property": "Date", "date": {"on_or_after": since_date}},
     )["results"]
-    views = {}
+    video_ids = set()
     for page in results:
         url = page["properties"]["Video URL"]["url"]
-        view_count = page["properties"]["View Count"]["number"]
         match = VIDEO_ID_RE.search(url or "")
         if match:
-            views[match.group(1)] = view_count
-    return views
+            video_ids.add(match.group(1))
+    return video_ids
 
 
 def append_daily_entries(data_source_id, data):

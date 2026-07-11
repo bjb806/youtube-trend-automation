@@ -1,51 +1,64 @@
-"""Re-rank candidate videos by view-count growth since yesterday, instead of
-raw cumulative view count - so a perennially popular video can't camp in the
-Top 10 forever just by having a high total; today's actual surge wins.
+"""Pick today's Top N from the candidate pool, excluding anything that already
+appeared in the Top 10 within the last EXCLUDE_DAYS days.
 
-Looks up yesterday's view counts from the Notion database (populated by the
-previous day's run). A video not seen yesterday (brand new to the chart)
-counts its full view_count as growth, so genuinely new videos still surface.
-On the very first run (no prior Notion data at all), everything falls back
-to ranking by raw view_count, same as before.
+Repeats aren't useful for content-idea research - if a video was already
+surfaced recently, seeing it again tomorrow doesn't tell the user anything
+new, no matter how much it's still growing. So instead of a soft "growth"
+score, this does a hard exclusion: look up every video id that appeared in
+Notion in the last N days, drop those from the candidate pool, then rank
+whatever's left by raw view count (already-excluded candidates can't have
+"yesterday" data anyway, since yesterday falls inside the exclusion window).
+
+If exclusion leaves fewer than --top candidates (rare, since youtube_fetch.py
+gathers a generous pool), backfill with the highest-view excluded ones so the
+report still has a full Top N rather than coming up short.
 
 CLI:
     python tools/rank_by_growth.py --input .tmp/candidates_20260709.json \\
         --date 2026-07-09 --database-id $NOTION_DATABASE_ID --top 10 \\
-        --output .tmp/trending_20260709.json
+        --exclude-days 7 --output .tmp/trending_20260709.json
 """
 import argparse
 import json
 from datetime import datetime, timedelta
 
-from notion_sync import get_video_views_by_date
+from notion_sync import get_recent_video_ids
 
 
-def compute_growth(videos, previous_views):
-    for video in videos:
-        prior = previous_views.get(video["video_id"])
-        video["previous_view_count"] = prior
-        video["view_growth"] = video["view_count"] - prior if prior is not None else video["view_count"]
-    return videos
+def select_top(videos, recent_ids, top_n):
+    fresh = [v for v in videos if v["video_id"] not in recent_ids]
+    repeats = [v for v in videos if v["video_id"] in recent_ids]
+    fresh.sort(key=lambda v: v["view_count"], reverse=True)
+    repeats.sort(key=lambda v: v["view_count"], reverse=True)
+
+    top = fresh[:top_n]
+    for video in top:
+        video["repeat"] = False
+    if len(top) < top_n:
+        backfill = repeats[: top_n - len(top)]
+        for video in backfill:
+            video["repeat"] = True
+        top += backfill
+    return top
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
-    parser.add_argument("--date", required=True, help="today's date, YYYY-MM-DD")
+    parser.add_argument("--date", required=True, help="today's date, YYYY-MM-DD (unused directly, kept for workflow consistency)")
     parser.add_argument("--database-id", required=True)
     parser.add_argument("--top", type=int, default=10)
+    parser.add_argument("--exclude-days", type=int, default=7)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
     with open(args.input, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    yesterday = (datetime.strptime(args.date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-    previous_views = get_video_views_by_date(args.database_id, yesterday)
+    since_date = (datetime.strptime(args.date, "%Y-%m-%d") - timedelta(days=args.exclude_days)).strftime("%Y-%m-%d")
+    recent_ids = get_recent_video_ids(args.database_id, since_date)
 
-    videos = compute_growth(data["videos"], previous_views)
-    videos.sort(key=lambda v: v["view_growth"], reverse=True)
-    top = videos[: args.top]
+    top = select_top(data["videos"], recent_ids, args.top)
     for rank, video in enumerate(top, start=1):
         video["rank"] = rank
 
@@ -53,9 +66,9 @@ def main():
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    new_count = sum(1 for v in top if v["previous_view_count"] is None)
-    print(f"[ok] ranked {len(videos)} candidates by growth vs {yesterday}, "
-          f"kept top {len(top)} ({new_count} new-to-chart) -> {args.output}")
+    backfilled = sum(1 for v in top if v.get("repeat"))
+    print(f"[ok] excluded videos seen since {since_date}, kept top {len(top)} "
+          f"({backfilled} backfilled repeats due to insufficient fresh candidates) -> {args.output}")
 
 
 if __name__ == "__main__":
