@@ -24,7 +24,7 @@
 **클라우드**(Anthropic 서버)에서 매일 자동 실행됩니다. 로컬 컴퓨터가 꺼져 있어도 상관없습니다. 두 리포트는 서로 다른 클라우드 라우틴으로 독립 실행됩니다.
 
 - GitHub 저장소(코드, 두 리포트 공용): https://github.com/bjb806/youtube-trend-automation (public — 코드에는 실제 API 키가 절대 없음, 전부 환경변수로만 읽음)
-- 클라우드 스케줄 관리: https://claude.ai/code/routines/trig_01E9eKVJQCnsDcVky1tL8dV1 (Trend Report), Shopping Shorts는 별도 라우틴 (routines 목록에서 확인)
+- 클라우드 스케줄 관리: https://claude.ai/code/routines/trig_01E9eKVJQCnsDcVky1tL8dV1 (Trend Report) / https://claude.ai/code/routines/trig_0181wdcQrhN7B5D2t4r19Vf1 (Shopping Shorts)
 - Notion 데이터: "YouTube Trend Reports" 페이지 안에 "YouTube KR Trends"와 "Shopping Shorts Trends" 두 데이터베이스
 
 ## 파일 구성
