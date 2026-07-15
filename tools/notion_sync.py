@@ -45,20 +45,26 @@ def get_client():
     return Client(auth=api_key)
 
 
-def create_database(parent_page_id):
+def create_database(parent_page_id, title=DATABASE_TITLE):
     """Notion's API splits a database (container) from its data source (the
     actual property schema + rows). Properties must go on initial_data_source,
     not on the database itself - and writes target the data source id, not
-    the database id."""
+    the database id.
+
+    The schema (SCHEMA) is generic enough (title/date/channel/views/url/
+    format/category/rank/hook/summary) to reuse as-is for any "Top N videos"
+    report - only the title differs, so a second call with a different
+    title makes a fully independent sibling database under the same parent
+    page without needing a new Notion integration/page share."""
     notion = get_client()
     response = notion.databases.create(
         parent={"type": "page_id", "page_id": parent_page_id},
-        title=[{"type": "text", "text": {"content": DATABASE_TITLE}}],
+        title=[{"type": "text", "text": {"content": title}}],
         initial_data_source={"properties": SCHEMA},
     )
     data_source_id = response["data_sources"][0]["id"]
-    print(f"[ok] created database '{DATABASE_TITLE}' (database_id={response['id']})")
-    print(f"[ok] data_source_id (use this as NOTION_DATABASE_ID): {data_source_id}")
+    print(f"[ok] created database '{title}' (database_id={response['id']})")
+    print(f"[ok] data_source_id (use this as the report's *_DATABASE_ID env var): {data_source_id}")
     return data_source_id
 
 
@@ -114,6 +120,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--setup", action="store_true", help="one-time: create the database")
     parser.add_argument("--parent-page-id", help="required with --setup")
+    parser.add_argument("--title", default=DATABASE_TITLE, help="database title, only used with --setup")
     parser.add_argument("--input", help="report_data JSON for daily sync")
     parser.add_argument("--database-id", help="target database id for daily sync")
     args = parser.parse_args()
@@ -122,7 +129,7 @@ def main():
         if not args.parent_page_id:
             print("[error] --parent-page-id is required with --setup", file=sys.stderr)
             sys.exit(1)
-        create_database(args.parent_page_id)
+        create_database(args.parent_page_id, args.title)
         return
 
     if not args.input or not args.database_id:

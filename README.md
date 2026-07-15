@@ -1,43 +1,53 @@
-# YouTube KR Trend Report 자동화
+# YouTube KR 콘텐츠 리포트 자동화
 
-매일 오전 8시(KST), 유튜브 한국 트렌드를 수집·분석해서 PDF 리포트로 만들어 이메일로 보내고, 모든 데이터를 Notion에 누적 저장하는 자동화.
+매일 오전 8시(KST), 유튜브 한국 콘텐츠를 수집·분석해서 PDF 리포트로 만들어 이메일로 보내고, 모든 데이터를 Notion에 누적 저장하는 자동화 모음. 같은 시간에 서로 독립적인 리포트 2개가 실행된다.
 
-## 매일 일어나는 일 (자동)
+| 리포트 | 워크플로우 | 수집 방식 |
+|---|---|---|
+| YouTube KR Trend Report | `workflows/daily_trend_report.md` | 유튜브 공식 인기차트 + 급상승 검색 |
+| Celebrity Shopping Shorts Report | `workflows/celebrity_shopping_shorts.md` | "연예인 추천템" 등 키워드 검색 + 60초 이하 쇼츠만 |
 
-1. **트렌드 후보 30개 수집** — 유튜브 공식 인기차트(mostPopular, 카테고리별) + 최근 48시간 내 조회수 급상승 검색을 합쳐서 후보군을 모음
-2. **최근 7일 반복 제외 후 Top 10 선정** — Notion에 최근 7일 내 이미 실렸던 영상은 후보에서 완전히 제외하고, 남은 후보 중 조회수 높은 순으로 뽑음 (이미 본 영상은 계속 인기여도 새로운 콘텐츠 인사이트가 아니므로)
+두 리포트 모두 `tools/`의 PDF/이메일/Notion/반복제외 로직을 공유하고, 각자 별도의 Notion 데이터베이스와 클라우드 스케줄을 가진다.
+
+## 매일 일어나는 일 (자동, 두 리포트 공통 흐름)
+
+1. **후보 30개 수집** — (트렌드) 유튜브 공식 인기차트 + 급상승 검색 / (쇼핑 쇼츠) 키워드 검색 + 60초 이하 필터
+2. **최근 7일 반복 제외 후 Top 10 선정** — 각자의 Notion DB에 최근 7일 내 이미 실렸던 영상은 후보에서 완전히 제외하고, 남은 후보 중 조회수 높은 순으로 뽑음 (이미 본 영상은 계속 인기여도 새로운 콘텐츠 인사이트가 아니므로)
 3. **자막 추출** — 가능한 영상만, 안 되면 제목/설명 기반으로 분석
-4. **분석** — Claude가 직접 영상별 요약/훅스타일/주제, 전체 트렌드 테마, 포맷 인사이트, 이번 주 추천 콘텐츠 주제 작성
-5. **PDF 리포트 생성** — 한글 지원, 깔끔한 기본 톤
+4. **분석** — Claude가 직접 영상별 요약/훅스타일/주제, 전체 테마, 포맷 인사이트, 이번 주 추천 콘텐츠 주제 작성
+5. **PDF 리포트 생성** — 한글 지원, 깔끔한 기본 톤, 리포트별 제목 커스터마이징
 6. **이메일 발송** — PDF 첨부 + 영상 링크 목록 포함
-7. **Notion에 누적 저장** — 앞으로 7일간 반복 제외 판정의 기준 데이터가 됨
+7. **각자의 Notion DB에 누적 저장** — 앞으로 7일간 반복 제외 판정의 기준 데이터가 됨
 
 ## 어디서 돌아가는가
 
-**클라우드**(Anthropic 서버)에서 매일 자동 실행됩니다. 로컬 컴퓨터가 꺼져 있어도 상관없습니다.
+**클라우드**(Anthropic 서버)에서 매일 자동 실행됩니다. 로컬 컴퓨터가 꺼져 있어도 상관없습니다. 두 리포트는 서로 다른 클라우드 라우틴으로 독립 실행됩니다.
 
-- GitHub 저장소(코드): https://github.com/bjb806/youtube-trend-automation (public — 코드에는 실제 API 키가 절대 없음, 전부 환경변수로만 읽음)
-- 클라우드 스케줄 관리: https://claude.ai/code/routines/trig_01E9eKVJQCnsDcVky1tL8dV1
-- Notion 데이터: "YouTube Trend Reports" 페이지 안 "YouTube KR Trends" 데이터베이스
+- GitHub 저장소(코드, 두 리포트 공용): https://github.com/bjb806/youtube-trend-automation (public — 코드에는 실제 API 키가 절대 없음, 전부 환경변수로만 읽음)
+- 클라우드 스케줄 관리: https://claude.ai/code/routines/trig_01E9eKVJQCnsDcVky1tL8dV1 (Trend Report), Shopping Shorts는 별도 라우틴 (routines 목록에서 확인)
+- Notion 데이터: "YouTube Trend Reports" 페이지 안에 "YouTube KR Trends"와 "Shopping Shorts Trends" 두 데이터베이스
 
 ## 파일 구성
 
 ```
-workflows/daily_trend_report.md   ← 전체 프로세스 매뉴얼 (Claude가 매일 이걸 보고 실행)
+workflows/
+  daily_trend_report.md         ← 일반 트렌드 리포트 매뉴얼
+  celebrity_shopping_shorts.md  ← 연예인 쇼핑 추천템 쇼츠 리포트 매뉴얼
 tools/
-  youtube_fetch.py       ← 트렌드 후보 수집 (YouTube Data API v3)
-  rank_by_growth.py      ← 최근 7일 반복 영상 제외 후 Top 10 선정 (Notion 조회)
-  youtube_transcript.py  ← 자막 추출
-  pdf_report.py          ← PDF 리포트 생성 (한글 폰트 포함)
-  gmail_send.py          ← Gmail 발송 (OAuth)
-  notion_sync.py         ← Notion 데이터베이스 생성/동기화
-requirements.txt          ← 파이썬 의존성 목록
+  youtube_fetch.py         ← 트렌드 후보 수집 (YouTube Data API v3, mostPopular+급상승)
+  shopping_shorts_fetch.py ← 쇼핑 쇼츠 후보 수집 (키워드 검색 + 60초 이하 필터)
+  rank_by_growth.py        ← 최근 7일 반복 영상 제외 후 Top 10 선정 (두 리포트 공용, Notion 조회)
+  youtube_transcript.py    ← 자막 추출 (공용)
+  pdf_report.py            ← PDF 리포트 생성 (공용, report_title로 리포트별 제목 커스터마이징)
+  gmail_send.py            ← Gmail 발송 (공용, OAuth)
+  notion_sync.py           ← Notion 데이터베이스 생성/동기화 (공용, --title로 DB별 분리)
+requirements.txt            ← 파이썬 의존성 목록 (공용)
 ```
 
 ## 자격증명이 어디 있는가
 
 - **로컬(`/Users/jeongbin/claude-study/`)**: `.env`(API 키), `credentials.json`/`token.json`(Gmail OAuth) — 전부 git에는 안 올라감(`.gitignore`)
-- **클라우드(claude.ai 환경설정)**: `YOUTUBE_API_KEY`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `REPORT_RECIPIENT_EMAIL`, `GMAIL_CREDENTIALS_JSON`, `GMAIL_TOKEN_JSON` — claude.ai/code의 "Default" 환경에 등록되어 있으며, 매일 실행 시 이 값들을 사용함
+- **클라우드(claude.ai 환경설정)**: `YOUTUBE_API_KEY`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `NOTION_SHOPPING_DATABASE_ID`, `REPORT_RECIPIENT_EMAIL`, `GMAIL_CREDENTIALS_JSON`, `GMAIL_TOKEN_JSON` — claude.ai/code의 "Default" 환경에 등록되어 있으며, 매일 실행 시 이 값들을 사용함 (두 라우틴이 같은 환경/환경변수를 공유함)
 
 ## 기술 스택
 

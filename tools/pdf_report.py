@@ -83,10 +83,12 @@ def _add_cover(pdf, data):
     pdf.ln(60)
     pdf.set_font(FONT_NAME, "B", 26)
     pdf.set_text_color(*ACCENT_COLOR)
-    pdf.cell(0, 14, "YouTube Korea Trend Report", new_x="LMARGIN", new_y="NEXT", align="C")
+    title = data.get("report_title", "YouTube Korea Trend Report")
+    pdf.cell(0, 14, title, new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.set_font(FONT_NAME, "", 12)
     pdf.set_text_color(*MUTED_COLOR)
-    pdf.cell(0, 10, f"Daily content intelligence brief · {data['date']}", new_x="LMARGIN", new_y="NEXT", align="C")
+    subtitle = data.get("report_subtitle", "Daily content intelligence brief")
+    pdf.cell(0, 10, f"{subtitle} · {data['date']}", new_x="LMARGIN", new_y="NEXT", align="C")
 
 
 def _add_summary(pdf, data):
