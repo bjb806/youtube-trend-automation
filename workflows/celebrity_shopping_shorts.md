@@ -32,10 +32,11 @@ python tools/shopping_shorts_fetch.py --region KR --days 14 --top 30 --output .t
 
 ### 2. 최근 7일 반복 제외 후 Top 10 선정
 ```
-python tools/rank_by_growth.py --input .tmp/shopping_candidates_{date}.json --date {date} --database-id $NOTION_SHOPPING_DATABASE_ID --top 10 --exclude-days 7 --output .tmp/shopping_trending_{date}.json
+python tools/rank_by_growth.py --input .tmp/shopping_candidates_{date}.json --date {date} --database-id $NOTION_SHOPPING_DATABASE_ID --top 10 --exclude-days 7 --no-backfill --output .tmp/shopping_trending_{date}.json
 ```
-- `daily_trend_report.md`와 동일한 툴/로직을 재사용한다 (최근 7일 내 이미 실린 영상 제외 → 남은 후보 조회수 순 정렬).
+- `daily_trend_report.md`와 동일한 툴/로직을 재사용하되 `--no-backfill`을 반드시 붙인다.
 - **주의**: `--database-id`는 반드시 `$NOTION_SHOPPING_DATABASE_ID`를 넘겨야 한다 (일반 트렌드 DB와 섞이면 안 됨).
+- **`--no-backfill`인 이유**: 이 카테고리는 키워드 검색 기반이라 후보 풀이 좁아서, 반복 제외 후 10개가 안 남는 날이 잦다. `daily_trend_report.md`(mostPopular 차트라 후보가 넉넉함)와 달리 여기서는 backfill을 켜두면 결국 같은 인기 영상이 며칠씩 재등장하는 문제가 생긴다. **그 결과 이 리포트는 어떤 날은 10개보다 적게 나올 수 있다 (정상 동작, 에러 아님)**.
 
 ### 3. 자막 추출
 ```
@@ -101,7 +102,7 @@ python tools/notion_sync.py --input .tmp/shopping_report_data_{date}.json --data
 | 단계 | 실패 시 |
 |---|---|
 | 후보 수집(키워드 검색) | 1회 재시도 → 계속 실패 시 발송 없이 중단, 2일 연속 실패면 사용자 보고 |
-| 반복 제외 랭킹 | 제외 후 10개 미만이면 조회수 높은 반복 영상으로 자동 백필 (에러 아님) |
+| 반복 제외 랭킹 | `--no-backfill`이라 제외 후 10개 미만이면 그만큼만 발행 (에러 아님, 후보 풀이 좁아서 생기는 정상 상황) |
 | 자막 | 영상 단위로만 "unavailable" 처리 (IP 차단으로 흔함), 전체는 계속 진행 |
 | PDF | Fix forward, 절대 스킵 금지 |
 | 이메일 | 헤드리스 재인증 시도 안 함, 실패해도 Notion 동기화는 계속, 실패 사실 명확히 보고 |
