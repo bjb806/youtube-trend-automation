@@ -24,6 +24,7 @@ load_dotenv()
 KEYWORDS = [
     "연예인 추천템", "연예인 애용템", "연예인 인생템",
     "연예인 PICK", "연예인 내돈내산", "스타일리스트 추천",
+    "연예인 협찬", "연예인 광고", "연예인 착용템",
 ]
 
 
@@ -84,7 +85,7 @@ def build_candidates(details, matched_keywords, top_n):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--region", default="KR")
-    parser.add_argument("--days", type=int, default=14, help="only consider videos published in the last N days")
+    parser.add_argument("--days", type=int, default=21, help="only consider videos published in the last N days")
     parser.add_argument("--top", type=int, default=30)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()

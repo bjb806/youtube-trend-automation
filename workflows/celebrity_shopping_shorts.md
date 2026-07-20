@@ -23,20 +23,21 @@ pip install -r requirements.txt
 
 ### 1. 키워드 검색으로 쇼츠 후보 수집
 ```
-python tools/shopping_shorts_fetch.py --region KR --days 14 --top 30 --output .tmp/shopping_candidates_{date}.json
+python tools/shopping_shorts_fetch.py --region KR --days 21 --top 30 --output .tmp/shopping_candidates_{date}.json
 ```
-- 이 카테고리는 유튜브 공식 차트가 없어서 키워드 검색으로 찾는다: "연예인 추천템", "연예인 애용템", "연예인 인생템", "연예인 PICK", "연예인 내돈내산", "스타일리스트 추천" (`tools/shopping_shorts_fetch.py`의 `KEYWORDS` 참고).
+- 이 카테고리는 유튜브 공식 차트가 없어서 키워드 검색으로 찾는다: "연예인 추천템", "연예인 애용템", "연예인 인생템", "연예인 PICK", "연예인 내돈내산", "스타일리스트 추천", "연예인 협찬", "연예인 광고", "연예인 착용템" (`tools/shopping_shorts_fetch.py`의 `KEYWORDS` 참고, 후보 풀이 너무 좁아서 9개로 확장함). "협찬"/"광고"를 "연예인" 없이 단독으로 쓰면 무관한 일반 기업 광고까지 섞여 들어와서, 반드시 "연예인" 접두어를 붙인다.
 - 검색 결과 중 실제 재생시간 60초 이하(진짜 쇼츠)만 후보로 남긴다.
-- 광고/PPL 표시 영상도 현재는 그대로 포함한다 (사용자가 나중에 제외 요청 가능 - 그때 필터 추가).
+- 광고/PPL 표시 영상도 그대로 포함한다.
 - API 오류 시 1회 재시도. 계속 실패하면 발송 없이 중단하고 로그만 남긴다. 2일 연속 실패 시 사용자에게 보고.
 
-### 2. 최근 7일 반복 제외 후 Top 10 선정
+### 2. 최근 4일 반복 제외 후 Top 10 선정
 ```
-python tools/rank_by_growth.py --input .tmp/shopping_candidates_{date}.json --date {date} --database-id $NOTION_SHOPPING_DATABASE_ID --top 10 --exclude-days 7 --no-backfill --output .tmp/shopping_trending_{date}.json
+python tools/rank_by_growth.py --input .tmp/shopping_candidates_{date}.json --date {date} --database-id $NOTION_SHOPPING_DATABASE_ID --top 10 --exclude-days 4 --no-backfill --output .tmp/shopping_trending_{date}.json
 ```
 - `daily_trend_report.md`와 동일한 툴/로직을 재사용하되 `--no-backfill`을 반드시 붙인다.
 - **주의**: `--database-id`는 반드시 `$NOTION_SHOPPING_DATABASE_ID`를 넘겨야 한다 (일반 트렌드 DB와 섞이면 안 됨).
-- **`--no-backfill`인 이유**: 이 카테고리는 키워드 검색 기반이라 후보 풀이 좁아서, 반복 제외 후 10개가 안 남는 날이 잦다. `daily_trend_report.md`(mostPopular 차트라 후보가 넉넉함)와 달리 여기서는 backfill을 켜두면 결국 같은 인기 영상이 며칠씩 재등장하는 문제가 생긴다. **그 결과 이 리포트는 어떤 날은 10개보다 적게 나올 수 있다 (정상 동작, 에러 아님)**.
+- **`--exclude-days`가 7이 아니라 4인 이유**: 후보 풀이 좁아서 7일로는 매일 채우기 어려웠다. 4일로 줄여서 순환을 빠르게 하고, 키워드 확장(1단계)과 함께 후보 공급을 늘렸다.
+- **`--no-backfill`인 이유**: `daily_trend_report.md`(mostPopular 차트라 후보가 넉넉함)와 달리 여기서는 backfill을 켜두면 같은 인기 영상이 며칠씩 재등장하는 문제가 생긴다. **그 결과 이 리포트는 어떤 날은 10개보다 적게 나올 수 있다 (정상 동작, 에러 아님)**.
 
 ### 3. 자막 추출
 ```
